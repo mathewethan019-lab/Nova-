@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#07080b">
+<title>NOVA Explore — Discover the Unknown</title>
+<meta name="description" content="NOVA Explore helps you discover public parks, historic places and outdoor spots around the world.">
+<link rel="preconnect" href="https://unpkg.com">
+<link rel="preconnect" href="https://tile.openstreetmap.org">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<style>
+:root{--bg:#07080b;--panel:#101218;--panel2:#151820;--line:#292d37;--silver:#e8ebf2;--muted:#9ba2b1;--blue:#9ba8c4;--radius:22px}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth;scroll-padding-top:90px}
+body{margin:0;background:var(--bg);color:var(--silver);font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;line-height:1.55;overflow-x:hidden}
+a{color:inherit}button,input,select{font:inherit}
+button,a,.place-card{ -webkit-tap-highlight-color:transparent}
+button{cursor:pointer}
+::selection{background:#c9d0df;color:#08090c}
+.bg-glow{position:fixed;inset:0;pointer-events:none;z-index:-1;background:radial-gradient(ellipse at 18% 12%,#9eaac00d,transparent 36%),radial-gradient(ellipse at 82% 65%,#536b9910,transparent 35%)}
+.wrap{width:min(1160px,calc(100% - 36px));margin:auto}
+nav{position:sticky;top:0;z-index:1000;background:#07080bdc;backdrop-filter:blur(16px);border-bottom:1px solid #ffffff10}
+.nav-inner{height:74px;display:flex;align-items:center;justify-content:space-between;gap:20px}
+.brand{display:flex;align-items:center;gap:11px;text-decoration:none;font-size:1.08rem;font-weight:850;letter-spacing:.19em}
+.logo{width:39px;height:39px;flex:none;filter:drop-shadow(0 0 8px #cdd5e322)}
+.nav-links{display:flex;gap:24px;align-items:center}
+.nav-links a{text-decoration:none;color:#b6bbc7;font-size:.9rem}
+.nav-links a:hover{color:white}
+.nav-cta,.btn{border:1px solid #cbd1dd55;background:linear-gradient(135deg,#f1f3f8,#9da5b4);color:#0a0b0e;border-radius:999px;padding:11px 17px;text-decoration:none;font-weight:750;display:inline-flex;align-items:center;justify-content:center;gap:8px}
+.btn.secondary{background:#151820;color:#e8ebf2;border-color:#363b48}
+.btn:hover,.nav-cta:hover{transform:translateY(-1px);filter:brightness(1.06)}
+.hero{min-height:82vh;display:grid;align-items:center;padding:80px 0 70px;position:relative}
+.hero-grid{display:grid;grid-template-columns:1.1fr .9fr;align-items:center;gap:42px}
+.eyebrow{font-size:.76rem;letter-spacing:.23em;text-transform:uppercase;color:#b8c0d0;font-weight:750}
+h1{font-size:clamp(3.5rem,8.5vw,7.6rem);line-height:.91;letter-spacing:-.075em;margin:20px 0 25px;font-weight:850}
+.chrome{background:linear-gradient(115deg,#fff 0%,#9ca5b5 20%,#f6f7fb 34%,#7e8799 51%,#f1f3f7 68%,#8b94a4 84%,#fff 100%);background-clip:text;-webkit-background-clip:text;color:transparent;text-shadow:0 0 35px #dce2f00a}
+.hero p{max-width:570px;color:var(--muted);font-size:1.08rem}
+.hero-actions{display:flex;gap:12px;flex-wrap:wrap;margin-top:28px}
+.hero-note{font-size:.82rem;color:#777f8e;margin-top:18px}
+.logo-stage{min-height:380px;display:grid;place-items:center;position:relative}
+.logo-stage:before{content:"";position:absolute;width:min(360px,85%);aspect-ratio:1;border-radius:50%;border:1px solid #d7dce90e;box-shadow:0 0 90px #aab6ce0b,inset 0 0 80px #dce4f208}
+.logo-large{width:min(370px,92%);height:auto;filter:drop-shadow(0 0 16px #b9c4dd22);animation:float 6s ease-in-out infinite}
+.orbit{position:absolute;border:1px solid #d7dce914;border-radius:50%;width:100%;height:52%;transform:rotate(-24deg)}
+.orbit.two{transform:rotate(34deg);width:78%;height:72%}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-12px)}}
+.section{padding:95px 0;position:relative}
+.section-head{max-width:720px;margin-bottom:36px}
+.section-head h2{font-size:clamp(2.1rem,5vw,4rem);letter-spacing:-.055em;line-height:1.03;margin:12px 0}
+.section-head p{color:var(--muted);max-width:620px}
+.section-head.right{margin-left:auto;text-align:right}
+.split{display:grid;grid-template-columns:1fr 1fr;gap:28px;align-items:stretch}
+.feature{border:1px solid var(--line);border-radius:var(--radius);padding:clamp(24px,4vw,42px);background:linear-gradient(145deg,#151820e8,#0d0f14e8);min-height:270px;position:relative;overflow:hidden}
+.feature:after{content:"";position:absolute;width:180px;height:180px;border:1px solid #dfe4ef12;border-radius:50%;right:-60px;bottom:-70px;box-shadow:0 0 0 22px #dfe4ef04,0 0 0 44px #dfe4ef03}
+.feature .number{color:#818b9e;letter-spacing:.16em;font-size:.75rem}
+.feature h3{font-size:1.55rem;letter-spacing:-.03em;margin:24px 0 10px}
+.feature p{color:var(--muted);max-width:430px}
+.feature .symbol{font-size:1.5rem;border:1px solid #414755;border-radius:13px;width:48px;height:48px;display:grid;place-items:center;background:#ffffff05}
+.map-section{padding-top:65px}
+.map-shell{border:1px solid #343945;border-radius:24px;overflow:hidden;background:#0e1015;box-shadow:0 24px 80px #0006}
+.map-toolbar{display:flex;gap:12px;padding:16px;align-items:center;flex-wrap:wrap;border-bottom:1px solid var(--line)}
+.searchbox{flex:1;min-width:180px;position:relative}
+.searchbox input{width:100%;background:#080a0f;border:1px solid #353b48;color:#f4f6fb;border-radius:12px;padding:12px 14px;outline:none}
+.searchbox input:focus,select:focus{border-color:#aab4c8;box-shadow:0 0 0 3px #aab4c81b}
+select{background:#10131a;color:#e7eaf1;border:1px solid #353b48;border-radius:12px;padding:12px;max-width:100%}
+#map{height:480px;width:100%;background:#171a20}
+.map-bottom{display:grid;grid-template-columns:1fr 1fr;gap:0;border-top:1px solid var(--line)}
+.map-info{padding:20px;border-right:1px solid var(--line)}
+.map-info strong{display:block;margin-bottom:5px}
+.map-info p{color:var(--muted);font-size:.9rem;margin:0}
+.results{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:18px}
+.place-card{border:1px solid var(--line);background:linear-gradient(145deg,#14171e,#0c0e13);border-radius:18px;padding:19px;cursor:pointer;transition:transform .2s,border-color .2s}
+.place-card:hover,.place-card:focus{transform:translateY(-3px);border-color:#778196;outline:none}
+.place-type{font-size:.72rem;text-transform:uppercase;letter-spacing:.14em;color:#aeb8ca}
+.place-card h3{margin:9px 0 6px;font-size:1.08rem}
+.place-card p{font-size:.88rem;color:var(--muted);margin:0 0 13px}
+.card-link{color:#e3e7ef;font-weight:700;font-size:.85rem;text-decoration:none}
+.pill{display:inline-block;border:1px solid #424957;border-radius:999px;padding:4px 9px;font-size:.72rem;color:#c5ccda;margin:0 5px 5px 0}
+.disclaimer{font-size:.82rem;color:#858d9b;margin-top:15px}
+.how-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.step{padding:23px;border:1px solid var(--line);border-radius:18px;background:#0d0f14}
+.step span{font-size:.8rem;color:#9da7ba;letter-spacing:.15em}
+.step h3{margin:16px 0 7px}
+.step p{color:var(--muted);font-size:.9rem}
+footer{border-top:1px solid var(--line);padding:30px 0 45px;color:#9299a8;font-size:.86rem}
+.footer-inner{display:flex;align-items:center;justify-content:space-between;gap:20px;flex-wrap:wrap}
+footer a{color:#d9deea}
+.reveal{opacity:0;transform:translateY(26px);transition:opacity .7s ease,transform .7s ease}
+.reveal.from-left{transform:translateX(-55px)}
+.reveal.from-right{transform:translateX(55px)}
+.reveal.visible{opacity:1;transform:translate(0,0)}
+.leaflet-popup-content-wrapper,.leaflet-popup-tip{background:#11151d;color:#edf0f6;border:1px solid #343b48}
+.leaflet-popup-content{line-height:1.5}
+.leaflet-popup-content a{color:#dbe3f4}
+.leaflet-control-zoom a{background:#10131a!important;color:#e9edf5!important;border-color:#353b48!important}
+.leaflet-control-attribution{background:#080a0ddd!important;color:#aab1c0!important}
+.leaflet-control-attribution a{color:#d8dfed!important}
+.empty{padding:24px;border:1px dashed #414754;border-radius:16px;color:var(--muted);grid-column:1/-1}
+@media(max-width:800px){.hero-grid,.split{grid-template-columns:1fr}.hero{padding-top:55px;min-height:auto}.logo-stage{min-height:290px}.logo-large{width:260px}.nav-links{gap:13px}.nav-links a:not(.nav-cta){display:none}.section{padding:68px 0}.results{grid-template-columns:repeat(2,1fr)}.how-grid{grid-template-columns:1fr}.section-head.right{text-align:left;margin-left:0}#map{height:400px}}
+@media(max-width:520px){.wrap{width:min(100% - 24px,1160px)}.nav-inner{height:65px}.brand{font-size:.95rem}.nav-cta{padding:9px 12px;font-size:.84rem}.hero h1{font-size:clamp(3.1rem,17vw,5rem)}.hero-grid{gap:10px}.logo-stage{min-height:245px}.logo-large{width:220px}.results{grid-template-columns:1fr}.map-toolbar{padding:12px}.map-bottom{grid-template-columns:1fr}.map-info{border-right:0;border-bottom:1px solid var(--line)}#map{height:350px}.section{padding:55px 0}}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;animation:none!important;transition:none!important}.reveal{opacity:1;transform:none}}
+</style>
+</head>
+<body>
+<div class="bg-glow"></div>
+<nav>
+  <div class="wrap nav-inner">
+    <a class="brand" href="#top" aria-label="NOVA Explore home">
+      <svg class="logo" viewBox="0 0 100 100" role="img" aria-label="NOVA star logo">
+        <defs><linearGradient id="chromeSmall" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#fff"/><stop offset=".25" stop-color="#929bab"/><stop offset=".48" stop-color="#f7f8fc"/><stop offset=".7" stop-color="#6d7789"/><stop offset="1" stop-color="#e9edf5"/></linearGradient></defs>
+        <path d="M54 8 C62 6 66 13 64 23 C61 40 68 46 88 49 C99 51 98 57 86 60 C64 65 59 72 54 91 C51 102 45 99 43 87 C40 67 33 63 13 60 C1 58 2 52 14 50 C34 47 40 40 44 20 C46 12 49 9 54 8Z" fill="none" stroke="url(#chromeSmall)" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M29 24 L33 36 L46 40 L33 44 L29 57 L25 44 L12 40 L25 36Z" fill="url(#chromeSmall)"/>
+      </svg>
+      <span>NOVA <span style="font-weight:450;color:#aab1c0">EXPLORE</span></span>
+    </a>
+    <div class="nav-links">
+      <a href="#discover">Discover</a><a href="#map-section">Map</a><a href="#how">How it works</a>
+      <a class="nav-cta" href="#map-section">Explore map ↗</a>
+    </div>
+  </div>
+</nav>
+<main id="top">
+<section class="hero">
+ <div class="wrap hero-grid">
+  <div class="reveal from-left">
+   <div class="eyebrow">A world worth discovering</div>
+   <h1><span class="chrome">DISCOVER</span><br>THE UNKNOWN.</h1>
+   <p>Find remarkable public places, historic landmarks and quieter outdoor escapes. Explore the map, learn the story, and plan a responsible visit.</p>
+   <div class="hero-actions"><a class="btn" href="#map-section">Explore the map <span>↗</span></a><a class="btn secondary" href="#discover">Discover NOVA ↓</a></div>
+   <div class="hero-note">WORLDWIDE DISCOVERY · PUBLIC ACCESS FIRST</div>
+  </div>
+  <div class="logo-stage reveal from-right" aria-label="Silver NOVA abstract star mark">
+   <div class="orbit"></div><div class="orbit two"></div>
+   <svg class="logo-large" viewBox="0 0 500 500" role="img" aria-label="Silver chrome NOVA star logo">
+    <defs>
+     <linearGradient id="chrome" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fff"/><stop offset=".16" stop-color="#9ca5b5"/><stop offset=".29" stop-color="#f9fafc"/><stop offset=".47" stop-color="#727d91"/><stop offset=".61" stop-color="#e9edf5"/><stop offset=".78" stop-color="#8993a5"/><stop offset="1" stop-color="#f7f8fb"/></linearGradient>
+     <linearGradient id="starFill" x1="0" y1="0" x2=".8" y2="1"><stop stop-color="#fff"/><stop offset=".5" stop-color="#aeb7c7"/><stop offset="1" stop-color="#edf0f6"/></linearGradient>
+     <filter id="shine"><feGaussianBlur stdDeviation="4" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+    </defs>
+    <path d="M279 35 C315 26 336 49 332 88 C325 158 340 191 397 215 C438 232 478 231 483 252 C488 275 447 282 404 290 C336 302 302 337 281 414 C269 459 241 464 228 421 C209 351 181 319 113 304 C65 293 20 298 19 273 C18 251 62 247 107 239 C171 227 198 198 218 119 C232 68 247 43 279 35Z" fill="none" stroke="url(#chrome)" stroke-width="27" stroke-linecap="round" stroke-linejoin="round" filter="url(#shine)"/>
+    <path d="M142 145 L158 194 L211 210 L158 225 L142 278 L126 225 L73 210 L126 194Z" fill="url(#starFill)" filter="url(#shine)"/>
+   </svg>
+  </div>
+ </div>
+</section>
+<section id="discover" class="section">
+ <div class="wrap">
+  <div class="section-head reveal from-right"><div class="eyebrow">01 / The NOVA approach</div><h2>Go further.<br><span class="chrome">Look closer.</span></h2><p>From well-known city parks to historic places and peaceful outdoor spots, NOVA helps you choose a destination and understand what to expect before you go.</p></div>
+  <div class="split">
+   <article class="feature reveal from-left"><div class="number">01 — HISTORY & CULTURE</div><div class="symbol">⌘</div><h3>Places with a past.</h3><p>Explore public landmarks, monuments, gardens and historic districts. Learn what makes each place worth a visit and follow official visitor guidance.</p></article>
+   <article class="feature reveal from-right"><div class="number">02 — NATURE & ESCAPES</div><div class="symbol">✳</div><h3>Find your outside.</h3><p>Discover waterfront walks, green spaces, scenic viewpoints and quiet corners that are intended for visitors to enjoy.</p></article>
+  </div>
+ </div>
+</section>
+<section class="section map-section" id="map-section">
+ <div class="wrap">
+  <div class="section-head reveal from-left"><div class="eyebrow">02 / Interactive atlas</div><h2>Find your <span class="chrome">next place.</span></h2><p>Search by name, city or country. Choose a category, select a marker, and open directions in your preferred map app.</p></div>
+  <div class="map-shell reveal">
+   <div class="map-toolbar">
+    <label class="searchbox"><input id="search" type="search" placeholder="Search places, cities or countries…" aria-label="Search locations"></label>
+    <select id="category" aria-label="Filter category"><option value="all">All places</option><option value="Nature">Nature & outdoors</option><option value="History">History & culture</option><option value="Hidden gem">Quiet spots</option></select>
+    <button class="btn secondary" id="reset" type="button">Reset view</button>
+   </div>
+   <div id="map" aria-label="Interactive map showing public places around the world"></div>
+   <div class="map-bottom">
+    <div class="map-info"><strong id="result-count">Loading places…</strong><p>Choose any pin or result card to see access notes, ideas for your visit and directions.</p></div>
+    <div class="map-info"><strong>Public access first</strong><p>NOVA lists public-facing destinations, not instructions to enter closed buildings or restricted land. Confirm current access before travelling.</p></div>
+   </div>
+  </div>
+  <div id="results" class="results" aria-live="polite"></div>
+  <p class="disclaimer">Map tiles and map data are provided by OpenStreetMap contributors. This demo has a curated starter list, not a complete worldwide database. Opening times, closures, ticketing and access rules can change; follow signs and official local guidance. Remote or restricted areas may not be safe or legal to enter.</p>
+ </div>
+</section>
+<section class="section" id="how">
+ <div class="wrap">
+  <div class="section-head right reveal from-right"><div class="eyebrow">03 / Your next move</div><h2>From curious<br>to <span class="chrome">out there.</span></h2><p>Three simple steps to turn a pin on the map into a better-planned day out.</p></div>
+  <div class="how-grid">
+   <article class="step reveal from-left"><span>STEP 01</span><h3>Search</h3><p>Enter a location or filter by nature, history or quieter public places.</p></article>
+   <article class="step reveal from-right"><span>STEP 02</span><h3>Learn</h3><p>Check the summary, activities, access notes and official visitor link.</p></article>
+   <article class="step reveal from-left"><span>STEP 03</span><h3>Go responsibly</h3><p>Open directions, check current conditions and stay within public areas.</p></article>
+  </div>
+ </div>
+</section>
+</main>
+<footer><div class="wrap footer-inner"><a class="brand" href="#top"><span class="chrome">NOVA</span> <span style="font-weight:450">EXPLORE</span></a><span>Discover with curiosity. Explore with respect.</span><span>Map data © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap contributors</a></span></div></footer>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+/* NOVA Explore — single-file demo. Location notes are summaries; official links are supplied where available. */
+const places = [
+ {id:1,name:"Central Park",city:"New York",country:"United States",category:"Nature",lat:40.7829,lon:-73.9654,access:"Public city park. Check current park alerts, rules and event notices before visiting.",hours:"Usually 6:00 am–1:00 am; confirm current notices.",history:"A landmark urban park designed in the 19th century and opened in stages from 1858.",things:["Walk the scenic paths","Visit Bethesda Terrace","Enjoy lawns and public views"],official:"https://www.centralparknyc.org/visit"},
+ {id:2,name:"Hyde Park",city:"London",country:"United Kingdom",category:"Nature",lat:51.5073,lon:-0.1657,access:"Public Royal Park. Follow park regulations and any temporary closure notices.",hours:"Pedestrian gates generally 5:00 am–midnight.",history:"One of London's historic Royal Parks, known for public gatherings, the Serpentine and Speakers’ Corner.",things:["Walk beside the Serpentine","Visit Speakers’ Corner","Enjoy public gardens and paths"],official:"https://www.royalparks.org.uk/visit/parks/hyde-park"},
+ {id:3,name:"Stanley Park",city:"Vancouver",country:"Canada",category:"Nature",lat:49.3043,lon:-123.1443,access:"Public urban park. Some trails or seawall sections may close temporarily; check official notices.",hours:"City information lists 6:00 am–10:00 pm unless otherwise posted.",history:"Vancouver's major waterfront park with forest, beaches and cultural landmarks.",things:["Walk or cycle permitted routes","See waterfront views","Explore gardens and landmarks"],official:"https://vancouver.ca/parks-recreation-culture/stanley-park.aspx"},
+ {id:4,name:"Gardens by the Bay",city:"Singapore",country:"Singapore",category:"Nature",lat:1.2816,lon:103.8636,access:"Public gardens; some conservatories and attractions require tickets and have separate rules.",hours:"Outdoor gardens commonly 5:00 am–2:00 am; paid attractions have separate hours.",history:"A large waterfront garden destination known for its Supertrees, conservatories and themed gardens.",things:["See Supertree Grove","Visit garden landscapes","Check ticketed conservatories"],official:"https://www.gardensbythebay.com.sg/en/plan-your-visit/opening-hours.html"},
+ {id:5,name:"Singapore Botanic Gardens",city:"Singapore",country:"Singapore",category:"Hidden gem",lat:1.3138,lon:103.8159,access:"Public botanical gardens. Check official notices for temporary closures and special garden rules.",hours:"Check the official visitor page for current opening times and access.",history:"A historic tropical botanic garden and UNESCO World Heritage Site.",things:["Explore themed gardens","Follow self-guided walks","Visit the National Orchid Garden (ticketed)"],official:"https://sbg.nparks.gov.sg/visit/"},
+ {id:6,name:"Golden Gate Park",city:"San Francisco",country:"United States",category:"Nature",lat:37.7694,lon:-122.4862,access:"Large public park; individual attractions, museums and gardens can charge admission or have separate hours.",hours:"Hours vary by area and facility; check local official information.",history:"A major 19th-century urban park stretching from central San Francisco toward the Pacific coast.",things:["Walk the gardens and paths","Visit public lakes","Check museum and garden admission"],official:"https://sfrecpark.org/"},
+ {id:7,name:"National Mall",city:"Washington, D.C.",country:"United States",category:"History",lat:38.8895,lon:-77.0353,access:"Public national park with monuments and memorials; security restrictions and temporary closures can apply.",hours:"Outdoor grounds are generally accessible, but individual sites have their own schedules.",history:"A ceremonial landscape connecting major U.S. monuments, memorials and Smithsonian museums.",things:["See public monuments","Explore museum exteriors and grounds","Check museum entry details"],official:"https://www.nps.gov/nama/index.htm"},
+ {id:8,name:"Ueno Park",city:"Tokyo",country:"Japan",category:"History",lat:35.7156,lon:139.7745,access:"Public park; museums, zoo and some gardens have separate entry fees and hours.",hours:"Park access and facility hours differ; check current local notices.",history:"A well-known Tokyo park with museums, cultural sites and seasonal cherry blossoms.",things:["Walk park paths","Visit nearby museums","Enjoy seasonal scenery"],official:"https://www.gotokyo.org/"},
+ {id:9,name:"Chapultepec Forest",city:"Mexico City",country:"Mexico",category:"Nature",lat:19.4204,lon:-99.1819,access:"Public urban forest with multiple sections; individual attractions and areas may have separate schedules.",hours:"Check official local guidance for the section and attraction you plan to visit.",history:"A large historic green space with museums, lakes and cultural landmarks.",things:["Walk public park paths","Visit museums and cultural sites","Explore public lakeside areas"],official:"https://chapultepec.org.mx/"},
+ {id:10,name:"Vondelpark",city:"Amsterdam",country:"Netherlands",category:"Hidden gem",lat:52.3579,lon:4.8686,access:"Public city park. Respect cycling lanes, wildlife and local park rules.",hours:"Open-air public park; check local notices for events or temporary restrictions.",history:"A celebrated Amsterdam park opened in the 19th century, popular for walking and cycling.",things:["Walk or cycle on marked paths","Relax on public lawns","Look for outdoor performances"],official:"https://www.amsterdam.nl/en/leisure/parks/"},
+ {id:11,name:"Royal Botanic Garden Sydney",city:"Sydney",country:"Australia",category:"Nature",lat:-33.8642,lon:151.2166,access:"Public garden; event areas and some facilities may have separate conditions.",hours:"Hours vary by season and area; check the official visitor page.",history:"A historic botanic garden beside Sydney Harbour with plant collections and harbour views.",things:["Follow garden walks","Enjoy public harbour viewpoints","Explore plant collections"],official:"https://www.botanicgardens.org.au/"},
+ {id:12,name:"Table Mountain National Park — Signal Hill area",city:"Cape Town",country:"South Africa",category:"Nature",lat:-33.9208,lon:18.3893,access:"Use designated public access points only. Weather can change quickly; check park alerts and avoid isolated areas alone.",hours:"Access and vehicle restrictions can vary; verify current park guidance.",history:"A scenic natural area overlooking Cape Town and its coastline.",things:["Use marked public viewpoints","Check weather before going","Enjoy daytime city and ocean views"],official:"https://www.sanparks.org/parks/table-mountain"},
+ {id:13,name:"Old Town Square",city:"Prague",country:"Czechia",category:"History",lat:50.0875,lon:14.4213,access:"Public historic square; nearby buildings, towers and museums may require tickets.",hours:"Open public space; attractions have separate hours.",history:"A central historic square surrounded by notable architecture and long-running public traditions.",things:["See historic façades","View the Astronomical Clock from public areas","Explore nearby pedestrian streets"],official:"https://www.prague.eu/"},
+ {id:14,name:"The Bund waterfront",city:"Shanghai",country:"China",category:"Hidden gem",lat:31.2400,lon:121.4900,access:"Public waterfront promenade; follow local crowd-control notices and restricted-area signs.",hours:"Access can be affected by events or security measures; check local notices.",history:"A famous waterfront promenade known for historic architecture and views across the Huangpu River.",things:["Walk the promenade","See river and skyline views","Visit during daylight or public evening hours"],official:"https://www.meet-in-shanghai.net/"},
+ {id:15,name:"Rijksmuseum Gardens",city:"Amsterdam",country:"Netherlands",category:"History",lat:52.3599,lon:4.8852,access:"Public-facing garden spaces; museum galleries require a ticket and have separate hours.",hours:"Check the museum's current visitor information before travelling.",history:"Garden spaces around the Rijksmuseum combine sculptures, planting and historic museum architecture.",things:["View outdoor sculptures","Explore garden paths","Pair with a museum visit"],official:"https://www.rijksmuseum.nl/en/visit"},
+ {id:16,name:"Tjörnin and City Hall area",city:"Reykjavík",country:"Iceland",category:"Hidden gem",lat:64.1466,lon:-21.9402,access:"Public city-lake area. Stay on marked paths and respect wildlife and weather warnings.",hours:"Outdoor public area; access may change for events or weather.",history:"A central urban lake near civic buildings and public walking routes.",things:["Walk the lakeside paths","Watch birds from a respectful distance","Explore nearby public streets"],official:"https://visitreykjavik.is/"},
+ {id:17,name:"Parc des Buttes-Chaumont",city:"Paris",country:"France",category:"Nature",lat:48.8809,lon:2.3828,access:"Public city park; steep paths and elevated viewpoints require care. Check gates and local notices.",hours:"Opening times vary seasonally; check Paris city guidance.",history:"A landscaped Paris park created in the 19th century, with hills, paths and viewpoints.",things:["Walk public paths","See the lake and bridges","Enjoy city views from designated viewpoints"],official:"https://www.paris.fr/"},
+ {id:18,name:"Edinburgh Old Town and Royal Mile",city:"Edinburgh",country:"United Kingdom",category:"History",lat:55.9506,lon:-3.1900,access:"Public historic streets; attractions, closes and private buildings may have their own entry rules.",hours:"Streets are public; individual attractions have separate hours.",history:"A historic part of Edinburgh known for its medieval street pattern and significant civic landmarks.",things:["Walk the Royal Mile","Explore public historic streets","Check opening times for ticketed attractions"],official:"https://edinburgh.org/"},
+ {id:19,name:"Ibirapuera Park",city:"São Paulo",country:"Brazil",category:"Nature",lat:-23.5874,lon:-46.6576,access:"Public metropolitan park; cultural venues and facilities can have separate schedules.",hours:"Check current city park information before visiting.",history:"A major city park known for open space, cultural buildings, lakes and walking routes.",things:["Walk and cycle on permitted routes","Enjoy the lakes and lawns","Check cultural venue schedules"],official:"https://www.capital.sp.gov.br/"},
+ {id:20,name:"Royal Botanic Gardens Victoria — Melbourne Gardens",city:"Melbourne",country:"Australia",category:"Nature",lat:-37.8304,lon:144.9796,access:"Public garden; tours, events and some experiences may require booking.",hours:"Opening hours vary; check official visitor information.",history:"A major botanic garden with diverse plant collections and landscaped lakes.",things:["Explore plant collections","Walk around ornamental lakes","Join a public guided activity"],official:"https://www.rbg.vic.gov.au/"},
+ {id:21,name:"Kensington Gardens",city:"London",country:"United Kingdom",category:"Hidden gem",lat:51.5078,lon:-0.1870,access:"Public Royal Park; temporary closures, event restrictions and park rules apply.",hours:"Check The Royal Parks visitor page for current gate times.",history:"Historic Royal Park adjoining Hyde Park, with gardens, monuments and open paths.",things:["Visit the Italian Gardens","Walk public paths","See public monuments"],official:"https://www.royalparks.org.uk/visit/parks/kensington-gardens"},
+ {id:22,name:"Parque del Retiro",city:"Madrid",country:"Spain",category:"Nature",lat:40.4153,lon:-3.6844,access:"Public city park; weather, safety notices and event schedules may affect access.",hours:"Seasonal opening hours apply; check official city guidance.",history:"A historic Madrid park featuring gardens, monuments and a boating lake.",things:["Walk garden paths","See the Crystal Palace exterior","Enjoy the public lake area"],official:"https://www.esmadrid.com/en/tourist-information/parque-del-retiro"},
+ {id:23,name:"Bastei viewpoint public area",city:"Lohmen",country:"Germany",category:"Nature",lat:50.9621,lon:14.0719,access:"Use signed public paths and designated viewpoints only. Weather, cliff conditions and temporary closures can affect access.",hours:"Access restrictions can change; check Saxon Switzerland National Park guidance.",history:"A sandstone landscape in Saxon Switzerland known for dramatic rock formations and a historic bridge.",things:["Follow signed viewpoints","Enjoy landscape photography from safe public areas","Check trail conditions before setting out"],official:"https://www.nationalpark-saechsische-schweiz.de/"},
+ {id:24,name:"Lumpini Park",city:"Bangkok",country:"Thailand",category:"Hidden gem",lat:13.7308,lon:100.5418,access:"Public urban park; follow posted rules, opening times and wildlife guidance.",hours:"Check current Bangkok public park information.",history:"A central green space with walking routes, lakes and public recreation areas.",things:["Walk the lake loop","Relax in public green spaces","Observe wildlife from a distance"],official:"https://www.tourismthailand.org/"}
+];
+const map = L.map('map',{scrollWheelZoom:false}).setView([20,0],2);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> contributors'}).addTo(map);
+const markersLayer=L.layerGroup().addTo(map);
+const markerById=new Map();
+const search=document.getElementById('search'), category=document.getElementById('category'), results=document.getElementById('results'), count=document.getElementById('result-count');
+function escapeHtml(value){return String(value).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+function directionsUrl(p){return 'https://www.google.com/maps/dir/?api=1&destination='+encodeURIComponent(p.lat+','+p.lon);}
+function popupHtml(p){return `<strong>${escapeHtml(p.name)}</strong><br><span>${escapeHtml(p.city)}, ${escapeHtml(p.country)}</span><br><span class="pill">${escapeHtml(p.category)}</span><p>${escapeHtml(p.access)}</p><a href="${directionsUrl(p)}" target="_blank" rel="noopener">Get directions ↗</a> · <a href="${escapeHtml(p.official)}" target="_blank" rel="noopener">Visitor info ↗</a>`;}
+function focusPlace(id){const p=places.find(x=>x.id===id);if(!p)return;map.flyTo([p.lat,p.lon],Math.max(map.getZoom(),11),{duration:.8});const marker=markerById.get(id);if(marker)setTimeout(()=>marker.openPopup(),500);document.getElementById('map').scrollIntoView({behavior:'smooth',block:'center'});}
+function render(){
+ const q=search.value.trim().toLowerCase(), cat=category.value;
+ const filtered=places.filter(p=>(cat==='all'||p.category===cat)&&[p.name,p.city,p.country,p.category,p.history].join(' ').toLowerCase().includes(q));
+ markersLayer.clearLayers();markerById.clear();
+ filtered.forEach(p=>{const m=L.marker([p.lat,p.lon]).bindPopup(popupHtml(p));m.addTo(markersLayer);markerById.set(p.id,m);});
+ count.textContent=`${filtered.length} ${filtered.length===1?'place':'places'} found`;
+ results.innerHTML=filtered.length?filtered.map(p=>`<article class="place-card" tabindex="0" role="button" data-id="${p.id}" aria-label="Show ${escapeHtml(p.name)} on map"><div class="place-type">${escapeHtml(p.category)} · ${escapeHtml(p.country)}</div><h3>${escapeHtml(p.name)}</h3><p>${escapeHtml(p.city)} — ${escapeHtml(p.history)}</p>${p.things.slice(0,2).map(t=>`<span class="pill">${escapeHtml(t)}</span>`).join('')}<div style="margin-top:12px"><a class="card-link" href="${directionsUrl(p)}" target="_blank" rel="noopener">Directions ↗</a> &nbsp; <a class="card-link" href="${escapeHtml(p.official)}" target="_blank" rel="noopener">Visitor info ↗</a></div></article>`).join(''):'<div class="empty">No places match that search. Try a city, country or another category.</div>';
+ results.querySelectorAll('.place-card').forEach(card=>{const go=()=>focusPlace(Number(card.dataset.id));card.addEventListener('click',e=>{if(e.target.closest('a'))return;go();});card.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();go();}});});
+}
+search.addEventListener('input',render);category.addEventListener('change',render);
+document.getElementById('reset').addEventListener('click',()=>{search.value='';category.value='all';map.setView([20,0],2);render();});
+render();
+setTimeout(()=>map.invalidateSize(),250);
+const observer=new IntersectionObserver(entries=>entries.forEach(entry=>{if(entry.isIntersecting){entry.target.classList.add('visible');observer.unobserve(entry.target);}}),{threshold:.12});
+document.querySelectorAll('.reveal').forEach(el=>observer.observe(el));
+</script>
+</body>
+</html>
